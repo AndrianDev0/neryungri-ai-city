@@ -25,7 +25,7 @@ const titles = {map:'Карта обращений', registry:'Реестр об
 
 async function api(path, options = {}) {
   let response;
-  try { response = await cityFetch(path, {headers:{'Content-Type':'application/json'}, ...options}); }
+  try { response = await cityFetch(path, options); }
   catch { throw new Error('Не удалось связаться с приложением. Проверьте, что оно запущено, и повторите.'); }
   if (!response.ok) {
     let message = 'Не удалось выполнить действие. Повторите ещё раз.';
