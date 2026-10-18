@@ -73,7 +73,20 @@ def test_history_enables_explicit_baseline(client):
     analytics = client.get("/api/analytics?dataset=user").json()
     forecast = next(item for item in analytics["forecasts"] if item["category"] == "lighting")
     assert forecast["expected"] == 7
-    assert "качество прогноза не проверено" in analytics["forecast_note"]
+    assert not analytics["evaluation"]["available"]
+    assert "Для проверки точности пока недостаточно истории" in analytics["forecast_note"]
+
+
+def test_forecast_note_matches_available_historical_evaluation(client):
+    rows = ["text,created_at"]
+    for day in range(1, 71):
+        rows.append(f"Не работает фонарь,{(main.now() - timedelta(days=day)).isoformat()}")
+    assert client.post("/api/import", json={"csv": "\n".join(rows)}).json()["imported"] == 70
+    analytics = client.get("/api/analytics?dataset=user").json()
+    assert analytics["evaluation"]["available"]
+    assert "Ошибка на прошлых данных показана ниже" in analytics["forecast_note"]
+    assert "Точность на будущих обращениях пока не проверена" in analytics["forecast_note"]
+    assert "недостаточно истории" not in analytics["forecast_note"]
 
 
 def test_cross_origin_write_rejected(client):
@@ -139,7 +152,7 @@ def test_demo_export_cannot_be_reimported_as_user_data(client):
     exported = client.get("/api/export.csv?dataset=demo").text
     result = client.post("/api/import", json={"csv": exported})
     assert result.status_code == 400
-    assert "учебные записи" in result.json()["detail"]
+    assert "учебные обращения" in result.json()["detail"]
     assert client.get("/api/reports?dataset=user").json()["reports"] == []
     assert len(client.get("/api/reports?dataset=demo").json()["reports"]) == 18
 

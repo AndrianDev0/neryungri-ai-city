@@ -27,7 +27,7 @@ async function api(path, options = {}) {
   let response;
   try { response = await cityFetch(path, options); }
   catch {
-    const error = new Error('Не удалось связаться с приложением. Проверьте, что оно запущено, и повторите.');
+    const error = new Error('Не удалось загрузить данные с сервера. Попробуйте ещё раз.');
     error.networkFailure = true;
     throw error;
   }
@@ -56,7 +56,9 @@ function options(values, selected) {return Object.entries(values).map(([key,labe
 
 function mapError(target, error, picker=false) {
   const missing=error.code==='missing-key';
-  $(target).innerHTML=`<strong>${missing?'Яндекс Карты пока не подключены':'Не удалось загрузить Яндекс Карты'}</strong><p>${escapeHtml(error.message)}</p>${picker?'<p>Место можно указать координатами ниже или сохранить обращение без точки.</p>':'<p>Обращения доступны в списке и реестре.</p>'}<div class="map-notice-actions"><button type="button" class="button small secondary" data-action="map-help">Как подключить</button>${picker?'':'<button type="button" class="text-button" data-action="retry-map">Проверить подключение</button>'}</div>`;
+  const hosted=state.meta?.temporary_storage || window.CITY_CONFIG?.apiBase;
+  const message=missing&&hosted?'Карта ещё не настроена владельцем сайта.':error.message;
+  $(target).innerHTML=`<strong>${missing?'Яндекс Карты пока не подключены':'Не удалось загрузить Яндекс Карты'}</strong><p>${escapeHtml(message)}</p>${picker?'<p>Введите координаты ниже или сохраните обращение без точки.</p>':!state.loading&&!state.failed?'<p>Обращения доступны в списке и реестре.</p>':''}<div class="map-notice-actions">${hosted?'':'<button type="button" class="button small secondary" data-action="map-help">Настройка карты</button>'}${picker?'':'<button type="button" class="text-button" data-action="retry-map">Обновить страницу</button>'}</div>`;
   $(target).hidden=false;
 }
 async function initMap() {
@@ -141,9 +143,16 @@ async function loadReports() {
 function switchDataset(dataset) {
   state.dataset=dataset;state.selected=null;state.analyticsRequest++;
   $$('[data-dataset]').forEach(b=>{b.classList.toggle('selected',b.dataset.dataset===dataset);b.setAttribute('aria-pressed',String(b.dataset.dataset===dataset));});
-  $('#dataset-description').textContent=dataset==='demo'?'Вымышленные обращения для проверки. Не данные администрации.':'Ваши записи хранятся на этом компьютере отдельно от учебного набора.';
+  updateDatasetDescription();
   $('#export-link').href=cityApiUrl(`/api/export.csv?dataset=${dataset}`);
   resetFilters(false);loadReports();
+}
+function updateDatasetDescription() {
+  $('#dataset-description').textContent=state.dataset==='demo'
+    ? 'Вымышленные обращения для проверки. Не данные администрации.'
+    : state.meta?.temporary_storage
+      ? 'Добавленные обращения хранятся на сервере и доступны всем посетителям.'
+      : 'Добавленные обращения хранятся на компьютере, где запущен сервер.';
 }
 function switchView(view) {
   state.view=view;$('#page-title').textContent=titles[view];document.title=`Neryungri AI City | ${titles[view]}`;
@@ -181,7 +190,7 @@ async function openDetail(id, opener = document.activeElement, discard = false) 
   $$('.report-row').forEach(row=>row.classList.toggle('selected',Number(row.dataset.report)===id));
   for(const [reportId,marker] of state.markers)marker.element.querySelector('.marker-disc')?.classList.toggle('selected',reportId===id);
   if(r.lat!==null && cityMap)cityMap.setLocation({center:[r.lon,r.lat]});
-  $('#detail-reference').textContent=`${r.reference} · ${r.demo?'Учебный пример':'Мои данные'}`;
+  $('#detail-reference').textContent=`${r.reference} · ${r.demo?'Учебный пример':'Добавленное обращение'}`;
   $('#detail-content').innerHTML=detailMarkup(r);
   $('#detail-content').scrollTop=0;
   renderProblemDetails(r);
@@ -195,7 +204,7 @@ async function openDetail(id, opener = document.activeElement, discard = false) 
   try {
     const data=await api(`/api/similar/${id}`);
     if(state.selected!==id)return;
-    $('#similar-section').innerHTML=`<summary>Похожие обращения рядом (${data.matches.length})</summary>${data.matches.length?`<p>В пределах 120 м, за 7 дней. Связь проверяет специалист.</p><div>${data.matches.map(m=>{const match=state.reports.find(x=>x.id===m.id);return `<p><button class="text-button" data-report="${m.id}">${m.reference} · ${m.distance_m} м</button><br>${escapeHtml(match?.address)}<br>${escapeHtml(match?.text)}</p>`;}).join('')}</div>`:`<p>${r.lat===null?'Для поиска нужны координаты.':'Совпадений по категории, месту и времени не найдено.'}</p>`}`;
+    $('#similar-section').innerHTML=`<summary>Похожие обращения рядом (${data.matches.length})</summary>${data.matches.length?`<p>Та же категория, в пределах 120 м, за 7 дней. Проверьте, относятся ли обращения к одной проблеме.</p><div>${data.matches.map(m=>{const match=state.reports.find(x=>x.id===m.id);return `<p><button class="text-button" data-report="${m.id}">${m.reference} · ${m.distance_m} м</button><br>${escapeHtml(match?.address)}<br>${escapeHtml(match?.text)}</p>`;}).join('')}</div>`:`<p>${r.lat===null?'Для поиска нужны координаты.':'Совпадений по категории, месту и времени не найдено.'}</p>`}`;
   }catch{if(state.selected===id)$('#similar-section').innerHTML='<summary>Похожие обращения рядом</summary><p>Не удалось проверить совпадения.</p>';}
 }
 
@@ -234,7 +243,7 @@ async function analyzeText() {
   try {
     const result=await api('/api/analyze',{method:'POST',body:JSON.stringify({text:text.value})});
     $('#new-category').value=result.category;
-    $('#analysis-result').innerHTML=`<strong>${escapeHtml(result.suggestions?.length?result.suggestions.map(s=>s.label).join(' + '):result.category_label)} · ${escapeHtml(state.meta.priorities[result.priority])} приоритет</strong><p>${escapeHtml(result.reasons.join(' '))}</p><p>${result.suggestions?.length?'Найдено несколько тем. Можно создать отдельные задачи или выбрать одну категорию.':result.review_required?'Категория неоднозначна. Выберите подходящую вручную.':'Предварительный результат учебной модели. Проверьте категорию.'}</p>`;
+    $('#analysis-result').innerHTML=`<strong>${escapeHtml(result.suggestions?.length?result.suggestions.map(s=>s.label).join(' + '):result.category_label)} · ${escapeHtml(state.meta.priorities[result.priority])} приоритет</strong><p>${escapeHtml(result.reasons.join(' '))}</p><p>${result.suggestions?.length?'Найдено несколько тем. Можно разделить сообщение на обращения или выбрать одну категорию.':result.review_required?'Не удалось уверенно определить категорию. Выберите её из списка.':'Проверьте предложенную категорию.'}</p>`;
     $('#analysis-result').hidden=false;
     splitSuggestions(result);
   }catch(error){setError('#new-error',error.message);}finally{busy(button,false);}
@@ -249,7 +258,7 @@ async function saveNew(event) {
     const split=$('#split-enabled')?.checked;
     if(split){payload.parts=$$('.split-text').map(el=>({text:el.value}));payload.categories=$$('.split-category').map(el=>el.value);}
     const report=await api(split?'/api/reports/split':'/api/reports',{method:'POST',body:JSON.stringify(payload)});
-    $('#new-dialog').close();switchDataset('user');showToast(split?`Созданы связанные задачи: ${report.reports.length}`:`Обращение ${report.reference} сохранено в «Мои данные»`);
+    $('#new-dialog').close();switchDataset('user');showToast(split?`Создано обращений по темам: ${report.reports.length}`:`Обращение ${report.reference} сохранено в разделе «Добавленные»`);
   }catch(error){setError('#new-error',error.message);}finally{busy(button,false);}
 }
 async function importCsv(event) {
@@ -264,16 +273,18 @@ async function importCsv(event) {
   }catch(error){setError('#import-error',error.message);}finally{busy(button,false);}
 }
 async function loadAnalytics() {
-  const request=++state.analyticsRequest;$('#analytics-content').innerHTML='<div class="loading-state">Рассчитываем показатели выбранного набора…</div>';
+  const request=++state.analyticsRequest;$('#analytics-content').innerHTML='<div class="loading-state">Загружаем аналитику…</div>';
   try {
     const data=await api(`/api/analytics?dataset=${state.dataset}`);if(request!==state.analyticsRequest)return;
     const maxCategory=Math.max(1,...data.categories.map(c=>c.count)),maxDay=Math.max(1,...data.days.map(d=>d.count));
-    $('#analytics-content').innerHTML=`<section class="chart-panel"><h2>Обращения по категориям</h2><p class="panel-subtitle">${state.dataset==='demo'?'Учебные записи':'Все записи в «Мои данные»'}. Количество сообщений, включая решённые.</p>${data.categories.map(c=>`<div class="bar-row"><span>${c.label}</span><div class="bar-track" aria-hidden="true"><div class="bar-fill" style="width:${c.count/maxCategory*100}%"></div></div><strong>${c.count}</strong></div>`).join('')}</section><section class="chart-panel"><h2>Поступление обращений</h2><p class="panel-subtitle">Последние 14 дней, по дате сообщения.</p><div class="daily-chart" role="img" aria-label="${escapeHtml(data.days.map(d=>`${dateShort(d.date+'T12:00:00+09:00')}: ${d.count}`).join('; '))}">${data.days.map(d=>`<div class="day-column" title="${dateShort(d.date+'T12:00:00+09:00')}: ${d.count}"><span class="day-value">${d.count}</span><div class="day-bar" style="height:${Math.max(2,d.count/maxDay*135)}px"></div></div>`).join('')}</div><div class="chart-dates"><span>${dateShort(data.days[0].date+'T12:00:00+09:00')}</span><span>${dateShort(data.days.at(-1).date+'T12:00:00+09:00')}</span></div></section><section class="chart-panel forecast-panel"><div><h2>Оценка на следующую неделю</h2><p class="panel-subtitle">${data.forecasts.length?'Базовая оценка: среднее за четыре недели.':'Для расчёта нужна история минимум за 28 дней и 30 обращений.'}</p><p class="field-help">${escapeHtml(data.forecast_note)}</p></div><div>${data.forecasts.length?data.forecasts.map(f=>`<div class="forecast-row"><span>${f.label}</span><strong>${f.expected.toLocaleString('ru-RU')}</strong></div>`).join(''):`<div class="forecast-state"><strong>Недостаточно истории</strong><p>${state.reports.length?`В выбранном наборе ${state.reports.length} обращений. `:''}Загрузите полную выгрузку за несколько недель, чтобы рассчитать базовую оценку.</p><button class="text-button" data-action="import">Загрузить историю</button></div>`}</div></section>`;
+    $('#analytics-content').innerHTML=`<section class="chart-panel"><h2>Обращения по категориям</h2><p class="panel-subtitle">${state.dataset==='demo'?'Учебные обращения':'Добавленные обращения'}, включая решённые.</p>${data.categories.map(c=>`<div class="bar-row"><span>${c.label}</span><div class="bar-track" aria-hidden="true"><div class="bar-fill" style="width:${c.count/maxCategory*100}%"></div></div><strong>${c.count}</strong></div>`).join('')}</section>
+      <section class="chart-panel"><h2>Поступление обращений</h2><p class="panel-subtitle">За последние 14 дней, по дате обращения.</p><div class="daily-chart" role="img" aria-label="${escapeHtml(data.days.map(d=>`${dateShort(d.date+'T12:00:00+09:00')}: ${d.count}`).join('; '))}">${data.days.map(d=>`<div class="day-column" title="${dateShort(d.date+'T12:00:00+09:00')}: ${d.count}"><span class="day-value">${d.count}</span><div class="day-bar" style="height:${Math.max(2,d.count/maxDay*135)}px"></div></div>`).join('')}</div><div class="chart-dates"><span>${dateShort(data.days[0].date+'T12:00:00+09:00')}</span><span>${dateShort(data.days.at(-1).date+'T12:00:00+09:00')}</span></div></section>
+      <section class="chart-panel forecast-panel"><div><h2>Прогноз числа обращений на неделю</h2><p class="panel-subtitle">${data.forecasts.length?'Среднее за последние четыре недели.':'Для расчёта нужна история за 28 дней и не менее 30 обращений.'}</p><p class="field-help">${escapeHtml(data.forecast_note)}</p></div><div>${data.forecasts.length?data.forecasts.map(f=>`<div class="forecast-row"><span>${f.label}</span><strong>${f.expected.toLocaleString('ru-RU')}</strong></div>`).join(''):`<div class="forecast-state"><strong>Недостаточно истории</strong><p>${state.reports.length?`В выбранном наборе ${state.reports.length} обращений. `:''}Загрузите все обращения за последние четыре недели.</p><button class="text-button" data-action="import">Загрузить историю</button></div>`}</div></section>`;
     renderProblemAnalytics(data);
   }catch(error){if(request!==state.analyticsRequest)return;$('#analytics-content').innerHTML=`<div class="empty-state"><h3>Не удалось рассчитать показатели</h3><p>${escapeHtml(error.message)}</p><button class="button secondary" data-action="retry-analytics">Повторить</button></div>`;}
 }
 
-function openImport(){ $('#import-form').reset();$('#file-name').textContent='Нажмите, чтобы открыть файл';setError('#import-error','');$('#import-dialog').showModal(); }
+function openImport(){ $('#import-form').reset();$('#file-name').textContent='CSV в UTF-8, до 2 МБ и 500 обращений';setError('#import-error','');$('#import-dialog').showModal(); }
 document.addEventListener('click',event=>{
   const zoom=event.target.closest('[data-zoom]');
   if(zoom){const map=zoom.dataset.map==='pick'?pickMap:cityMap;if(map)map.setLocation({zoom:Math.min(19,Math.max(9,map.zoom+Number(zoom.dataset.zoom)))});}
@@ -304,7 +315,7 @@ $('#analyze-button').addEventListener('click',analyzeText);$('#new-form').addEve
 $('#new-text').addEventListener('input',()=>{$('#save-report').textContent='Сохранить обращение';$('#analysis-result').innerHTML='';$('#analysis-result').hidden=true;$('#new-category').value='';});
 $('#clear-location').addEventListener('click',()=>{$('#new-lat').value='';$('#new-lon').value='';clearPickMarker();});
 ['#new-lat','#new-lon'].forEach(s=>$(s).addEventListener('change',()=>{const lat=Number($('#new-lat').value),lon=Number($('#new-lon').value);if(lat>=56.5&&lat<=56.8&&lon>=124.45&&lon<=124.95){setLocation(lat,lon);pickMap?.setLocation({center:[lon,lat]});}else clearPickMarker();}));
-$('#csv-file').addEventListener('change',()=>{$('#file-name').textContent=$('#csv-file').files[0]?.name||'Нажмите, чтобы открыть файл';});
+$('#csv-file').addEventListener('change',()=>{$('#file-name').textContent=$('#csv-file').files[0]?.name||'CSV в UTF-8, до 2 МБ и 500 обращений';});
 $('#import-form').addEventListener('submit',importCsv);$('#retry').addEventListener('click',()=>initialize());
 $('#report-dialog').addEventListener('close',restoreDetailFocus);
 
@@ -313,6 +324,8 @@ async function initialize() {
   try {
     if(!state.meta){state.meta=await api('/api/meta');$('#category-filter').innerHTML='<option value="">Все категории</option>'+categoryOptions();$('#new-category').innerHTML=categoryOptions('',true);}
     if(state.meta.temporary_storage){$('#hosting-notice').hidden=false;$('#storage-note').textContent='Временное хранение на сервере';}
+    $$('.owner-code-note').forEach(note=>{note.hidden=!state.meta.temporary_storage;});
+    updateDatasetDescription();
     if(!cityMap)initMap();await loadReports();
   }catch(error){
     if(!state.meta && error.networkFailure && cityOpenHostedApp())return;

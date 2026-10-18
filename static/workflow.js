@@ -18,7 +18,7 @@ function rememberDetail() {
   const changed=Object.fromEntries(Object.entries(detailValues()).filter(([key,value])=>value!==report[key]));
   if('lat' in changed || 'lon' in changed){const values=detailValues();changed.lat=values.lat;changed.lon=values.lon;}
   if(Object.keys(changed).length)detailDrafts.set(report.id,changed);else detailDrafts.delete(report.id);
-  $('#draft-state').textContent=Object.keys(changed).length?'Есть несохранённые правки. Черновик хранится до обновления страницы.':'';
+  $('#draft-state').textContent=Object.keys(changed).length?'Изменения не сохранены. При обновлении страницы они пропадут.':'';
   $('#discard-draft').hidden=!Object.keys(changed).length;
 }
 function detailMarkup(r) {
@@ -28,12 +28,13 @@ function detailMarkup(r) {
       <label for="detail-category">Категория</label><select id="detail-category">${categoryOptions(r.category)}</select>
       <div class="form-columns"><div><label for="detail-priority">Приоритет</label><select id="detail-priority">${options(state.meta.priorities,r.priority)}</select></div><div><label for="detail-status">Статус</label><select id="detail-status">${options(state.meta.statuses,r.status)}</select></div></div>
       <div class="form-columns"><div><label for="detail-assignee">Ответственный или бригада</label><input id="detail-assignee" maxlength="150" value="${escapeHtml(r.assignee)}" placeholder="Пока не назначен"></div><div><label for="detail-due">Плановый срок</label><input id="detail-due" type="date" value="${escapeHtml(r.due_date)}"></div></div>
-      <label for="detail-address">Адрес этого обращения</label><input id="detail-address" maxlength="300" value="${escapeHtml(r.address)}">
+      <label for="detail-address">Адрес обращения</label><input id="detail-address" maxlength="300" value="${escapeHtml(r.address)}">
       <div class="form-columns"><div><label for="detail-lat">Широта</label><input id="detail-lat" type="number" step="any" min="56.5" max="56.8" value="${r.lat??''}"></div><div><label for="detail-lon">Долгота</label><input id="detail-lon" type="number" step="any" min="124.45" max="124.95" value="${r.lon??''}"></div></div>
       <div class="inline-actions"><button type="button" class="text-button" id="edit-location">Выбрать точку на карте</button><button type="button" class="text-button" id="remove-detail-location">Убрать точку</button></div>
+      ${state.meta.temporary_storage?'<p class="field-help">Для сохранения нужен код владельца.</p>':''}
       <div class="form-error" id="detail-error" role="alert" tabindex="-1" hidden></div>
     </form>
-    <details class="detail-section"><summary>Исходная оценка по тексту</summary><p>${escapeHtml(r.analysis.reasons.join(' '))}</p><p class="field-help">Приоритет проверяет специалист.</p></details>
+    <details class="detail-section"><summary>Исходная оценка по тексту</summary><p>${escapeHtml(r.analysis.reasons.join(' '))}</p><p class="field-help">Срочность должен проверить специалист.</p></details>
     <details class="detail-section" id="similar-section"><summary>Похожие обращения рядом</summary><p>Проверяем…</p></details>
     ${r.bundle_id?`<details class="detail-section"><summary>Исходное сообщение и другие темы</summary><p>${escapeHtml(r.source_text)}</p>${state.reports.filter(x=>x.bundle_id===r.bundle_id&&x.id!==r.id).map(x=>`<button type="button" class="text-button" data-report="${x.id}">${x.reference} · ${escapeHtml(x.category_label)}</button>`).join('')}</details>`:''}
     <details class="detail-section" id="photo-section"><summary>Фото до и после</summary><p class="field-help">JPEG, PNG или WebP до 5 МБ. Без лиц, номеров и других персональных данных. Фото сохраняются отдельно от правок карточки.</p><div id="photo-list">Загрузка…</div><form id="photo-form"><label for="photo-phase">Этап</label><select id="photo-phase"><option value="before">До ремонта</option><option value="after">После ремонта</option></select><label for="photo-file">Фотография</label><input type="file" id="photo-file" accept="image/jpeg,image/png,image/webp" required><button class="button secondary" id="photo-upload">Добавить фото</button><div class="form-error" id="photo-error" role="alert" hidden></div></form></details>
@@ -65,7 +66,7 @@ function setupWorkflow(report) {
 
 window.addEventListener('beforeunload',event=>{if(detailDrafts.size){event.preventDefault();event.returnValue='';}});
 
-const historyLabels={category:'Категория',status:'Статус',priority:'Приоритет',assignee:'Ответственный',due_date:'Срок',address:'Адрес',lat:'Широта',lon:'Долгота',repair_confirmed:'Ремонт подтверждён',resolution_note:'Результат проверки',priority_note:'Обоснование приоритета',problem_id:'Проблема',recurrence_of:'Предыдущий ремонт',resolved_at:'Дата решения',source_text:'Исходный текст',photo:'Фото'};
+const historyLabels={category:'Категория',status:'Статус',priority:'Приоритет',assignee:'Ответственный',due_date:'Срок',address:'Адрес',lat:'Широта',lon:'Долгота',repair_confirmed:'Ремонт подтверждён',resolution_note:'Результат проверки',priority_note:'Причина изменения приоритета',problem_id:'Проблема',recurrence_of:'Предыдущий ремонт',resolved_at:'Дата решения',source_text:'Исходный текст',photo:'Фото'};
 function historyValue(key,value){if(value===null||value==='')return 'не указано';if(key==='repair_confirmed')return value?'да':'нет';return ({category:state.meta.categories,status:state.meta.statuses,priority:state.meta.priorities}[key]||{})[value]??String(value);}
 async function loadAttachments(id) {
   const revision=++detailRevision;
@@ -107,7 +108,7 @@ function mapReports(reports=visibleReports()) {
 
 function splitSuggestions(result) {
   if(!result.suggestions?.length)return;
-  $('#analysis-result').insertAdjacentHTML('beforeend',`<div id="split-suggestions"><label class="check-label"><input type="checkbox" id="split-enabled">Создать отдельные задачи по темам</label><p class="field-help">Проверьте тексты. Задачи сохранят связь с исходным сообщением, общий адрес и точку.</p>${result.suggestions.map((s,i)=>`<label for="split-text-${i}">Тема ${i+1}</label><select aria-label="Категория темы ${i+1}" class="split-category">${categoryOptions(s.category)}</select><textarea id="split-text-${i}" class="split-text" required minlength="5" maxlength="4000" rows="2">${escapeHtml(s.text)}</textarea>`).join('')}</div>`);
-  const toggle=()=>{$$('.split-text').forEach(el=>el.required=$('#split-enabled').checked);$('#save-report').textContent=$('#split-enabled').checked?'Создать задачи по темам':'Сохранить обращение';};
+  $('#analysis-result').insertAdjacentHTML('beforeend',`<div id="split-suggestions"><label class="check-label"><input type="checkbox" id="split-enabled">Разделить на обращения по темам</label><p class="field-help">Проверьте тексты. У обращений останутся общий адрес, точка на карте и связь с исходным сообщением.</p>${result.suggestions.map((s,i)=>`<label for="split-text-${i}">Тема ${i+1}</label><select aria-label="Категория темы ${i+1}" class="split-category">${categoryOptions(s.category)}</select><textarea id="split-text-${i}" class="split-text" required minlength="5" maxlength="4000" rows="2">${escapeHtml(s.text)}</textarea>`).join('')}</div>`);
+  const toggle=()=>{$$('.split-text').forEach(el=>el.required=$('#split-enabled').checked);$('#save-report').textContent=$('#split-enabled').checked?'Создать обращения по темам':'Сохранить обращение';};
   $('#split-enabled').addEventListener('change',toggle);toggle();
 }

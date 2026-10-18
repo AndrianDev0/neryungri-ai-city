@@ -3,14 +3,14 @@
 // Keep [longitude, latitude] at the adapter boundary; API 2.1 uses [lat, lon].
 window.CityMaps = (() => {
   let sdkPromise;
-  const unavailable = 'Проверьте интернет, ключ JavaScript API и разрешённые адреса в кабинете Яндекса. Новый ключ и изменения ограничений могут применяться до 15 минут.';
+  const unavailable = 'Карта не загрузилась. Проверьте интернет и обновите страницу.';
 
   async function load() {
     let response;
     try {
       response = await fetch(cityApiUrl('/api/map-config'), {cache:'no-store', signal:AbortSignal.timeout(10000)});
     } catch {
-      throw new Error('Не удалось прочитать настройки карты. Проверьте, что приложение запущено.');
+      throw new Error('Не удалось загрузить настройки карты с сервера. Попробуйте ещё раз.');
     }
     const config = await response.json();
     if (!response.ok) throw new Error(config.detail || unavailable);

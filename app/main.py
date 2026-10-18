@@ -104,7 +104,7 @@ async def local_write_protection(request: Request, call_next):
         if token and request.url.path != "/api/analyze":
             provided = request.headers.get("authorization", "").removeprefix("Bearer ")
             if not secrets.compare_digest(provided.encode(), token.encode()):
-                return JSONResponse({"detail": "Для изменения данных нужен код редактирования владельца сайта."}, status_code=401)
+                return JSONResponse({"detail": "Для изменения данных нужен код владельца сайта."}, status_code=401)
     response = await call_next(request)
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
@@ -348,7 +348,7 @@ def update_report(report_id: int, payload: ReportUpdate):
         if "resolution_note" in updates:
             updates["resolution_note"] = updates["resolution_note"].strip()
         if updates.get("priority", row["priority"]) != row["priority"]:
-            updates["priority_note"] = updates.get("priority_note", "").strip() or "Приоритет изменён специалистом."
+            updates["priority_note"] = updates.get("priority_note", "").strip() or "Приоритет изменён вручную."
         if updates:
             fields = ",".join(f"{key}=?" for key in updates)
             db.execute(f"UPDATE reports SET {fields} WHERE problem_id=?", (*updates.values(), row["problem_id"]))
@@ -514,7 +514,7 @@ def import_reports(payload: ImportInput):
                 raise HTTPException(400, f"Строка {line}: число ячеек не совпадает с заголовком. Текст с разделителем заключите в кавычки; пустые ячейки сохраните. Ничего не загружено.")
             provenance = row.get("demo", "").strip().lower()
             if provenance in {"true", "1", "yes", "да"}:
-                raise HTTPException(400, f"Строка {line}: учебные записи нельзя загрузить в «Мои данные». Используйте «Учебный набор». Ничего не загружено.")
+                raise HTTPException(400, f"Строка {line}: учебные обращения нельзя загрузить в раздел «Добавленные». Они доступны в разделе «Учебные». Ничего не загружено.")
             if provenance not in {"", "false", "0", "no", "нет"}:
                 raise HTTPException(400, f"Строка {line}: неизвестное значение demo. Используйте true или false. Ничего не загружено.")
             try:
@@ -589,14 +589,17 @@ def analytics(dataset: Literal["demo", "user"] = "demo"):
         for zone in sorted({r["zone"] for r in items}):
             count = sum(r["zone"] == zone and today - timedelta(days=27) <= datetime.fromisoformat(r["created_at"]).astimezone(LOCAL_TZ).date() <= today for r in items)
             sector_forecasts.append({"zone": zone, "expected": round(count / 4, 1)})
+    evaluation = evaluate_baseline(dates, today, coverage)
+    accuracy_note = ("Ошибка на прошлых данных показана ниже. Точность на будущих обращениях пока не проверена."
+                     if evaluation["available"] else "Для проверки точности пока недостаточно истории.")
     return {"days": days, "coverage_days": coverage, "forecasts": forecasts,
             "open_problems": sum(r["status"] != "resolved" for r in roots),
             "overdue_problems": sum(r["status"] != "resolved" and bool(r["due_date"]) and r["due_date"] < today.isoformat() for r in roots),
             "problems": len(roots), "duplicate_reports": len(items) - len(roots),
             "recurrences": sum(r["recurrence_of"] is not None for r in roots), "sectors": sectors,
-            "sector_forecasts": sector_forecasts, "evaluation": evaluate_baseline(dates, today, coverage),
+            "sector_forecasts": sector_forecasts, "evaluation": evaluation,
             "forecast_method": "Среднее число обращений за четыре недели",
-            "forecast_note": "Базовая оценка при условии полной истории за 28 дней. Это не вероятность аварии; качество прогноза не проверено.",
+            "forecast_note": "Расчёт требует полной истории за 28 дней и не оценивает вероятность аварии. " + accuracy_note,
             "categories": [{"category": key, "label": label, "count": sum(r["category"] == key for r in items)} for key, label in CATEGORIES.items()]}
 
 

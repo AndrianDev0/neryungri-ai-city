@@ -23,7 +23,7 @@ window.cityFetch = async (path, options = {}) => {
   let response = await fetch(cityApiUrl(path), {...options, headers});
   if (response.status === 401 && editing) {
     sessionStorage.removeItem('city-write-token');
-    token = window.prompt('Введите код редактирования владельца сайта. Просмотр доступен без кода.');
+    token = window.prompt('Для изменения данных введите код владельца. Просматривать обращения можно без кода.');
     if (token?.trim()) {
       headers.set('Authorization', `Bearer ${token.trim()}`);
       response = await fetch(cityApiUrl(path), {...options, headers});

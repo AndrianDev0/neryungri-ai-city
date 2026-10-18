@@ -8,21 +8,20 @@
   <meta name="theme-color" content="#f5f5f7">
   <link rel="icon" type="image/svg+xml" href="static/logo.svg">
   <script src="static/config.js"></script>
-  <script src="static/connection.js"></script>
+  <script src="static/connection.js?v=20261018-copy"></script>
   <script src="static/appearance.js?v=20261018-theme-label"></script>
-  <link rel="stylesheet" href="static/design.css?v=20261018-scroll-chain">
+  <link rel="stylesheet" href="static/design.css?v=20261018-copy">
   <script src="static/report-scroll.js" defer></script>
-  <script src="static/maps.js" defer></script>
-  <script src="static/problems.js" defer></script>
-  <script src="static/workflow.js" defer></script>
-  <script src="static/app.js" defer></script>
+  <script src="static/maps.js?v=20261018-copy" defer></script>
+  <script src="static/problems.js?v=20261018-copy" defer></script>
+  <script src="static/workflow.js?v=20261018-copy" defer></script>
+  <script src="static/app.js?v=20261018-copy" defer></script>
 </head>
 <body>
 <a class="skip-link" href="#main">Перейти к обращениям</a>
 <div class="app-shell">
   <aside class="sidebar" aria-label="Навигация приложения">
     <div class="brand"><img class="brand-symbol" src="static/logo.svg" width="44" height="44" alt=""><div class="wordmark">Neryungri<span>AI City</span></div></div>
-    <div class="sidebar-caption">Рабочее пространство</div>
     <nav class="navigation" aria-label="Основные разделы">
       <button class="nav-item active" data-view="map" aria-current="page" aria-label="Карта обращений"><span data-icon="map"></span><span>Карта</span></button>
       <button class="nav-item" data-view="registry" aria-label="Реестр обращений"><span data-icon="list"></span><span>Обращения</span></button>
@@ -33,20 +32,20 @@
       <span class="city-name">Нерюнгри</span>
       <span>Республика Саха (Якутия)</span>
       <div class="sidebar-rule"></div>
-      <span>Исследовательский прототип</span>
+      <span>Учебный проект</span>
       <button class="method-link" id="method-open">О методе и данных <span aria-hidden="true">ⓘ</span></button>
     </div>
   </aside>
   <main id="main" class="main">
     <header class="page-header">
-      <div><div class="breadcrumb">Нерюнгри <span>·</span> Городская среда</div><h1 id="page-title">Карта обращений</h1></div>
+      <div><div class="breadcrumb">Нерюнгри</div><h1 id="page-title">Карта обращений</h1></div>
       <div class="header-actions"><button class="button secondary" id="import-open"><span data-icon="upload"></span><span>Добавить обращения из файла</span></button><button class="button primary" id="new-open"><span data-icon="plus"></span><span>Новое обращение</span></button></div>
     </header>
     <section class="dataset-strip" aria-label="Выбор набора данных">
-      <div class="dataset-switch" role="group" aria-label="Набор данных"><button data-dataset="demo" class="selected" aria-pressed="true">Учебный набор</button><button data-dataset="user" aria-pressed="false">Мои данные</button></div>
+      <div class="dataset-switch" role="group" aria-label="Обращения"><button data-dataset="demo" class="selected" aria-pressed="true">Учебные</button><button data-dataset="user" aria-pressed="false">Добавленные</button></div>
       <p id="dataset-description">Вымышленные обращения для проверки. Не данные администрации.</p>
     </section>
-    <p id="hosting-notice" class="field-help" hidden>Публичный учебный сайт. Добавленные данные и фото видны посетителям и могут исчезнуть после перезапуска сервера. Не добавляйте персональные данные. Изменения доступны по коду владельца.</p>
+    <p id="hosting-notice" class="field-help" hidden>Учебный сайт: обращения и фото видны всем. После перезапуска сервера они могут исчезнуть. Не добавляйте личные данные.</p>
     <div id="global-error" class="error-banner" role="alert" hidden><span id="global-error-text"></span><button class="text-button" id="retry">Повторить</button></div>
     <section class="summary-strip" aria-label="Сводка выбранного набора" id="summary-strip"><div class="summary-item"><span>Обращения</span><strong id="stat-total">…</strong></div><div class="summary-item"><span>Высокий приоритет</span><strong id="stat-high">…</strong></div><div class="summary-item"><span>В работе</span><strong id="stat-progress">…</strong></div><div class="summary-item"><span>Без точки на карте</span><strong id="stat-unlocated">…</strong></div><div class="summary-note">Показатели выбранного набора<span id="as-of">Загрузка данных</span></div></section>
     <p id="problem-summary" class="problem-summary" aria-live="polite"></p>
@@ -70,7 +69,7 @@
       </div>
       <div class="report-panel"><div class="panel-heading"><h2>Обращения <span id="visible-count"></span></h2><label class="sr-only" for="sort">Сортировка</label><select id="sort"><option value="priority">По приоритету</option><option value="date">Сначала новые</option></select></div><div id="report-list" class="report-list" aria-live="polite"><div class="loading-state">Загружаем обращения…</div></div></div>
     </section>
-    <section id="registry-view" class="view" hidden aria-label="Реестр обращений"><div class="section-heading"><h2>Все записи <span id="registry-count"></span></h2><a class="button secondary" id="export-link" href="/api/export.csv?dataset=demo" download><span data-icon="download"></span>Скачать CSV</a></div><div id="registry-list" class="registry-list"></div></section>
+    <section id="registry-view" class="view" hidden aria-label="Реестр обращений"><div class="section-heading"><h2>Все обращения <span id="registry-count"></span></h2><a class="button secondary" id="export-link" href="/api/export.csv?dataset=demo" download><span data-icon="download"></span>Скачать CSV</a></div><div id="registry-list" class="registry-list"></div></section>
     <section id="analytics-view" class="view" hidden aria-label="Аналитика обращений"><div id="analytics-content" class="analytics-grid"></div></section>
     <footer class="workspace-footer"><span>Категории предложены моделью. Срочность требует проверки.</span><button class="text-button footer-method" data-action="method">О методе и данных</button><span id="storage-note">Локальное хранение</span></footer>
   </main>
@@ -78,7 +77,7 @@
 <dialog id="report-dialog" class="detail-dialog" aria-labelledby="detail-title"><div class="dialog-top"><div class="eyebrow" id="detail-reference"></div><button class="icon-button" data-close="report-dialog" aria-label="Закрыть карточку"><span data-icon="close"></span></button></div><div id="detail-content"></div><footer class="detail-footer"><p id="draft-state" role="status"></p><div class="dialog-actions"><button type="button" class="text-button" id="discard-draft" hidden>Сбросить правки</button><button class="button secondary" type="button" data-close="report-dialog">Закрыть</button><button class="button primary" type="submit" form="detail-form" id="detail-save">Сохранить изменения</button></div></footer></dialog>
 <dialog id="location-dialog" class="form-dialog" aria-labelledby="location-title"><div class="dialog-top"><h2 id="location-title">Исправить место</h2><button type="button" class="icon-button" data-close="location-dialog" aria-label="Закрыть выбор места">×</button></div><div id="edit-map" role="region" aria-label="Уточнение места на карте"></div><p id="edit-point-state" role="status"></p><p id="edit-map-error" class="form-error" role="alert" hidden></p><button type="button" class="button primary" data-close="location-dialog">Вернуться к карточке</button></dialog>
 <dialog id="new-dialog" class="form-dialog" aria-labelledby="new-title">
-  <div class="dialog-top"><div><div class="eyebrow">Мои данные</div><h2 id="new-title">Новое обращение</h2></div><button class="icon-button" data-close="new-dialog" aria-label="Закрыть новое обращение"><span data-icon="close"></span></button></div>
+  <div class="dialog-top"><div><div class="eyebrow">Добавленные обращения</div><h2 id="new-title">Новое обращение</h2></div><button class="icon-button" data-close="new-dialog" aria-label="Закрыть новое обращение"><span data-icon="close"></span></button></div>
   <form id="new-form">
     <label for="new-text">Что произошло <span class="required">*</span></label><textarea id="new-text" name="text" required minlength="5" maxlength="4000" rows="4" placeholder="Опишите проблему без ФИО, телефонов и других личных данных"></textarea>
     <div class="analyze-row"><button class="button secondary" id="analyze-button" type="button"><span data-icon="scan"></span>Разобрать обращение</button><span>Категорию можно исправить</span></div>
@@ -88,11 +87,31 @@
     <p class="field-help">Нажмите на карту или введите координаты. Если место неизвестно, оставьте пустым.</p>
     <div class="pick-map-shell"><div id="pick-map" role="region" aria-label="Выбор места обращения на карте"></div><div class="map-zoom" id="pick-zoom" hidden><button type="button" data-zoom="1" data-map="pick" aria-label="Увеличить карту выбора места">+</button><button type="button" data-zoom="-1" data-map="pick" aria-label="Уменьшить карту выбора места">−</button></div><div id="pick-notice" class="pick-notice" role="status">Загружаем Яндекс Карты…</div></div>
     <div class="form-columns coordinate-fields"><div><label for="new-lat">Широта</label><input id="new-lat" type="number" step="any" min="56.50" max="56.80" placeholder="56.6620"></div><div><label for="new-lon">Долгота</label><input id="new-lon" type="number" step="any" min="124.45" max="124.95" placeholder="124.7150"></div></div>
+    <p class="field-help owner-code-note" hidden>Для сохранения нужен код владельца.</p>
     <div id="new-error" class="form-error" role="alert" hidden></div><div class="dialog-actions"><button type="button" class="button secondary" data-close="new-dialog">Отмена</button><button class="button primary" id="save-report" type="submit">Сохранить обращение</button></div>
   </form>
 </dialog>
-<dialog id="import-dialog" class="form-dialog compact-dialog" aria-labelledby="import-title"><div class="dialog-top"><div><div class="eyebrow">Мои данные</div><h2 id="import-title">Загрузить обращения</h2></div><button class="icon-button" data-close="import-dialog" aria-label="Закрыть импорт"><span data-icon="close"></span></button></div><p class="dialog-description">Выберите CSV в UTF-8 с обезличенными обращениями. Обязательный столбец: <code>text</code>.</p><p class="field-help">Можно добавить address, lat, lon, category и created_at. До 500 строк за одну загрузку. Все строки проверяются перед сохранением.</p><a class="text-button template-link" href="/api/template.csv" download>Скачать шаблон CSV</a><form id="import-form"><label class="file-drop" for="csv-file"><span data-icon="upload"></span><strong>Выбрать CSV-файл</strong><span id="file-name">Нажмите, чтобы открыть файл</span><input id="csv-file" type="file" accept=".csv,text/csv" required></label><p class="field-help">Загрузка добавляет записи. Повторная загрузка создаст дубликаты.</p><div id="import-error" class="form-error" role="alert" hidden></div><div class="dialog-actions"><button class="button secondary" type="button" data-close="import-dialog">Отмена</button><button class="button primary" type="submit" id="import-submit">Загрузить обращения</button></div></form></dialog>
-<dialog id="method-dialog" class="form-dialog compact-dialog" aria-labelledby="method-title"><div class="dialog-top"><h2 id="method-title">О методе и данных</h2><button class="icon-button" data-close="method-dialog" aria-label="Закрыть описание метода"><span data-icon="close"></span></button></div><div class="method-copy"><h3>Как определяется категория</h3><p>TF-IDF и логистическая регрессия, обученные на авторских учебных примерах. Качество на реальных обращениях пока не измерено. Категорию можно исправить вручную.</p><h3>Почему такой приоритет</h3><p>Правила ищут в тексте признаки опасности и затруднённого прохода. Это предварительная оценка, которую проверяет человек.</p><h3>Что означает точка</h3><p>Место, выбранное пользователем или переданное в CSV. Адрес автоматически не геокодируется. Секторы на карточках условные и не обозначают официальные районы.</p><h3>Учебный набор</h3><p>Все обращения и точки в этом наборе вымышлены. Они показывают работу приложения и не описывают состояние города.</p><h3>Прогноз</h3><p>При достаточной истории рассчитывается среднее за четыре недели. Это базовая оценка новых обращений, а не вероятность аварии или повторной поломки.</p></div></dialog>
+<dialog id="import-dialog" class="form-dialog compact-dialog" aria-labelledby="import-title">
+  <div class="dialog-top"><div><div class="eyebrow">Добавленные обращения</div><h2 id="import-title">Загрузить обращения</h2></div><button class="icon-button" data-close="import-dialog" aria-label="Закрыть импорт"><span data-icon="close"></span></button></div>
+  <p class="dialog-description">Выберите CSV с обращениями без личных данных. Текст обращения должен быть в столбце <code>text</code>.</p>
+  <p class="field-help">Можно добавить столбцы address, lat, lon, category и created_at. Все строки проверяются перед сохранением.</p>
+  <a class="text-button template-link" href="/api/template.csv" download>Скачать шаблон CSV</a>
+  <form id="import-form"><label class="file-drop" for="csv-file"><span data-icon="upload"></span><strong>Выбрать CSV-файл</strong><span id="file-name">CSV в UTF-8, до 2 МБ и 500 обращений</span><input id="csv-file" type="file" accept=".csv,text/csv" required></label>
+    <p class="field-help">Повторная загрузка того же файла создаст дубли обращений.</p><p class="field-help owner-code-note" hidden>Для загрузки нужен код владельца.</p>
+    <div id="import-error" class="form-error" role="alert" hidden></div><div class="dialog-actions"><button class="button secondary" type="button" data-close="import-dialog">Отмена</button><button class="button primary" type="submit" id="import-submit">Загрузить обращения</button></div>
+  </form>
+</dialog>
+<dialog id="method-dialog" class="form-dialog compact-dialog" aria-labelledby="method-title">
+  <div class="dialog-top"><h2 id="method-title">О методе и данных</h2><button class="icon-button" data-close="method-dialog" aria-label="Закрыть описание метода"><span data-icon="close"></span></button></div>
+  <div class="method-copy">
+    <h3>Как определяется категория</h3><p>Модель предлагает категорию по тексту обращения. Она обучена на учебных примерах; точность на реальных обращениях пока не измерена. Категорию можно исправить. Метод: TF-IDF и логистическая регрессия.</p>
+    <h3>Почему такой приоритет</h3><p>Приложение ищет в тексте слова, связанные с опасностью, затруднённым проходом и другими проблемами. Приоритет предварительный: срочность нужно проверить на месте.</p>
+    <h3>Что означает точка</h3><p>Выберите место на карте или загрузите координаты из файла. Приложение пока не определяет точку по адресу. Секторы на карточках условные и не обозначают официальные районы.</p>
+    <h3>Обращения и проблемы</h3><p>Одна карточка содержит одно обращение. Несколько обращений об одной неисправности можно объединить в проблему. Дубль сообщает о той же нерешённой проблеме. Повтор после ремонта связывается с ранее подтверждённым ремонтом.</p>
+    <h3>Учебные обращения</h3><p>Все обращения и точки в учебном наборе вымышлены. Они показывают работу приложения и не описывают состояние города. В сводке и аналитике учитываются только обращения выбранного набора.</p>
+    <h3>Прогноз</h3><p>Приложение оценивает число обращений на следующую неделю по среднему за последние четыре недели. Для расчёта нужна полная история за 28 дней и не менее 30 обращений. Это прогноз числа обращений, а не вероятности аварии или повторной поломки.</p>
+  </div>
+</dialog>
 <dialog id="map-help-dialog" class="form-dialog compact-dialog" aria-labelledby="map-help-title"><div class="dialog-top"><h2 id="map-help-title">Подключить Яндекс Карты</h2><button class="icon-button" data-close="map-help-dialog" aria-label="Закрыть инструкцию"><span data-icon="close"></span></button></div><ol class="map-setup-steps"><li>В <a href="https://developer.tech.yandex.ru/" target="_blank" rel="noopener">кабинете разработчика Яндекса</a> нажмите «Подключить API» и выберите <strong>JavaScript API</strong>.</li><li>Для ключа заполните ограничение по HTTP Referer: <code>localhost</code>, без порта. Открывайте приложение по адресу <code>http://localhost:8765</code>.</li><li>Откройте файл <code>config.local.toml</code> в папке проекта и вставьте ключ между кавычками:<pre>yandex_maps_api_key = "ваш ключ"</pre></li><li>Сохраните файл и обновите страницу. Активация ключа и ограничений может занять до 15 минут.</li></ol><p class="field-help">Бесплатный доступ зависит от условий Яндекса. <a href="https://yandex.ru/dev/commercial/doc/ru/" target="_blank" rel="noopener">Условия использования</a></p><div class="dialog-actions"><button class="button primary" type="button" data-close="map-help-dialog">Понятно</button></div></dialog>
 <div id="toast" class="toast" role="status" hidden></div>
 </body>
