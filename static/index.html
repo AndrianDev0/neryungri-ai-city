@@ -10,7 +10,7 @@
   <script src="static/config.js"></script>
   <script src="static/connection.js"></script>
   <script src="static/appearance.js?v=20261011"></script>
-  <link rel="stylesheet" href="static/design.css?v=20261011-2">
+  <link rel="stylesheet" href="static/design.css?v=20261018-zoom">
   <script src="static/maps.js" defer></script>
   <script src="static/problems.js" defer></script>
   <script src="static/workflow.js" defer></script>
@@ -58,7 +58,10 @@
     </section>
     <section id="map-view" class="view map-workspace" aria-label="Карта и список обращений">
       <div class="map-panel">
-        <div class="map-toolbar"><div class="map-selector"><label class="sr-only" for="map-mode">На карте</label><select id="map-mode"><option value="reports">Обращения</option><option value="problems">Без дублей</option></select><span id="map-point-count" role="status"></span></div><div class="map-toolbar-actions"><button type="button" class="button small secondary" id="zoom-lock" aria-pressed="true" title="Колёсико, двойной щелчок и жесты не меняют масштаб. Кнопки + и − работают." disabled>Масштаб защищён</button><button class="button small secondary" id="fit-map" title="Показать все точки" disabled><span data-icon="locate"></span>Все точки</button></div></div>
+        <div class="map-toolbar"><div class="map-selector"><label class="sr-only" for="map-mode">На карте</label><select id="map-mode"><option value="reports">Обращения</option><option value="problems">Без дублей</option></select><span id="map-point-count" role="status"></span></div><div class="map-toolbar-actions">
+          <button type="button" class="button small secondary" id="zoom-lock" role="switch" aria-checked="true" aria-describedby="zoom-lock-help" title="Блокировка включена. Колёсико и жесты не меняют масштаб. Кнопки + и − работают." disabled><span>Блокировка масштаба</span><span class="zoom-switch-track" aria-hidden="true"><span class="zoom-switch-thumb"></span></span></button>
+          <span id="zoom-lock-help" class="sr-only">Запрещает случайное приближение колёсиком, двойным щелчком и жестами. Кнопки + и − работают всегда.</span>
+          <button class="button small secondary" id="fit-map" title="Показать все точки" disabled><span data-icon="locate"></span>Все точки</button></div></div>
         <div class="city-map-shell"><div id="city-map" role="region" aria-label="Интерактивная карта Нерюнгри"></div>
         <div class="map-zoom" id="city-zoom" hidden><button type="button" data-zoom="1" data-map="city" aria-label="Увеличить карту">+</button><button type="button" data-zoom="-1" data-map="city" aria-label="Уменьшить карту">−</button></div>
         <div id="map-notice" class="map-notice" role="status"><strong>Загружаем Яндекс Карты…</strong></div></div>

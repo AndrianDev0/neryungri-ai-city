@@ -292,11 +292,10 @@ $('#map-mode').addEventListener('change',()=>{renderReports();showToast($('#map-
 $('#reset-filters').addEventListener('click',()=>resetFilters());$('#fit-map').addEventListener('click',fitMap);
 $('#zoom-lock').addEventListener('click',()=>{
   if(!cityMap)return;
-  const button=$('#zoom-lock'),locked=button.getAttribute('aria-pressed')!=='true';
+  const button=$('#zoom-lock'),locked=button.getAttribute('aria-checked')!=='true';
   cityMap.setZoomLocked(locked);
-  button.setAttribute('aria-pressed',String(locked));
-  button.textContent=locked?'Масштаб защищён':'Свободный масштаб';
-  button.title=locked?'Колёсико, двойной щелчок и жесты не меняют масштаб. Кнопки + и − работают.':'Колёсико, двойной щелчок и жесты меняют масштаб. Нажмите, чтобы заблокировать.';
+  button.setAttribute('aria-checked',String(locked));
+  button.title=locked?'Блокировка включена. Колёсико и жесты не меняют масштаб. Кнопки + и − работают.':'Блокировка выключена. Колёсико и жесты меняют масштаб.';
   showToast(locked?'Масштаб защищён от случайного изменения. Кнопки + и − работают.':'Изменение масштаба колёсиком и жестами включено');
 });
 $('#new-open').addEventListener('click',openNew);$('#import-open').addEventListener('click',openImport);

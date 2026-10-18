@@ -26,6 +26,7 @@ The single active stylesheet is static/design.css. static/styles.css is the prev
 - The original report-reference motif is retained; navigation uses map, list and chart symbols with direct functional meanings.
 - Light/dark preference initially follows the OS; a working switch persists the person's explicit choice. The geographic basemap retains its provider rendering for geographic legibility; its own controls stay white with dark text.
 - No decorative page animation. Hover/press feedback uses 160ms, and reduced-motion removes transitions.
+- Map zoom protection uses a labelled switch inside a bordered button. Its thumb moves for 180ms to show the enabled state; a subtle press response confirms activation. Reduced-motion disables both effects, and the state remains available through `aria-checked`.
 - Mobile replaces the sidebar with a compact brand/navigation header, stacks map and list, retains 44px touch targets and expandable analytical rows.
 
 ## Earlier implementation notes (superseded where inconsistent above)
