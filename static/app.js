@@ -306,9 +306,10 @@ $('#import-form').addEventListener('submit',importCsv);$('#retry').addEventListe
 $('#report-dialog').addEventListener('close',restoreDetailFocus);
 
 async function initialize() {
+  if(window.CITY_CONFIG?.apiBase && !state.meta) $('#as-of').textContent='Подключаем сервер. После простоя это может занять около минуты.';
   try {
     if(!state.meta){state.meta=await api('/api/meta');$('#category-filter').innerHTML='<option value="">Все категории</option>'+categoryOptions();$('#new-category').innerHTML=categoryOptions('',true);}
-    if(state.meta.temporary_storage){$('#hosting-notice').hidden=false;}
+    if(state.meta.temporary_storage){$('#hosting-notice').hidden=false;$('#storage-note').textContent='Временное хранение на сервере';}
     if(!cityMap)initMap();await loadReports();
   }catch(error){$('#global-error-text').textContent=error.message;$('#global-error').hidden=false;state.loading=false;state.failed=true;renderReports();}
 }
