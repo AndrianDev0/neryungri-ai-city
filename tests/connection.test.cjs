@@ -55,3 +55,16 @@ test('direct server and local app never enter a redirect loop', () => {
   context.CITY_CONFIG.apiBase = '';
   assert.equal(context.cityOpenHostedApp(), false);
 });
+
+test('blocked session storage does not prevent an authenticated write', async () => {
+  const {request, calls, context} = client([401, 200]);
+  context.sessionStorage = {
+    getItem() { throw new Error('Storage blocked'); },
+    removeItem() { throw new Error('Storage blocked'); },
+    setItem() { throw new Error('Storage blocked'); },
+  };
+  const response = await request('/api/reports', {method: 'POST', body: '{"text":"test"}'});
+  assert.equal(response.ok, true);
+  assert.equal(calls[0].headers.has('Authorization'), false);
+  assert.equal(calls[1].headers.get('Authorization'), 'Bearer replacement-code');
+});

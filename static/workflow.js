@@ -90,8 +90,9 @@ async function openEditLocation() {
       $('#edit-point-state').textContent=`Выбрано: ${lat.toFixed(5)}, ${lon.toFixed(5)}. Закройте карту и сохраните карточку.`;
     });}
     if(editMarker){editMap.removeChild(editMarker);editMarker=null;}
-    const values=detailValues();editMap.setLocation({center:values.lat===null?center:[values.lon,values.lat],zoom:15});
-    if(values.lat!==null&&values.lon!==null)showEditPoint(values.lat,values.lon);
+    const values=detailValues(),located=values.lat!==null&&values.lon!==null;
+    editMap.setLocation({center:located?[values.lon,values.lat]:center,zoom:15});
+    if(located)showEditPoint(values.lat,values.lon);
     $('#edit-point-state').textContent='Нажмите на нужное место. Координаты можно также ввести в карточке.';
   }catch(error){$('#edit-map-error').textContent=error.message;$('#edit-map-error').hidden=false;}
 }

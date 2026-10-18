@@ -89,6 +89,35 @@ def test_forecast_note_matches_available_historical_evaluation(client):
     assert "недостаточно истории" not in analytics["forecast_note"]
 
 
+def test_forecast_uses_completed_days_and_ignores_today(client):
+    rows = ["text,created_at"]
+    for day in range(1, 33):
+        rows.append(f"Не работает фонарь,{(main.now() - timedelta(days=day)).isoformat()}")
+    assert client.post("/api/import", json={"csv": "\n".join(rows)}).status_code == 200
+    before = client.get("/api/analytics?dataset=user").json()
+    for _ in range(8):
+        assert client.post("/api/reports", json={"text": "Не работает фонарь"}).status_code == 201
+    after = client.get("/api/analytics?dataset=user").json()
+    assert after["forecasts"] == before["forecasts"]
+    assert after["sector_forecasts"] == before["sector_forecasts"]
+    assert next(f for f in after["forecasts"] if f["category"] == "lighting")["expected"] == 7
+    assert after["days"][-1]["count"] == 8
+
+
+def test_partial_day_does_not_complete_forecast_or_evaluation_history(client):
+    rows = ["text,created_at"]
+    for day in range(28):
+        for _ in range(3):
+            rows.append(f"Не работает фонарь,{(main.now() - timedelta(days=day)).isoformat()}")
+    assert client.post("/api/import", json={"csv": "\n".join(rows)}).status_code == 200
+    data = client.get("/api/analytics?dataset=user").json()
+    assert data["coverage_days"] == 27
+    assert data["forecasts"] == []
+    rows = ["text,created_at", f"Не работает фонарь,{(main.now() - timedelta(days=55)).isoformat()}"]
+    assert client.post("/api/import", json={"csv": "\n".join(rows)}).status_code == 200
+    assert not client.get("/api/analytics?dataset=user").json()["evaluation"]["available"]
+
+
 def test_cross_origin_write_rejected(client):
     assert client.post("/api/reports", json={"text": "Не горит фонарь"}, headers={"origin": "https://example.com"}).status_code == 403
 

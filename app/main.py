@@ -571,7 +571,9 @@ def analytics(dataset: Literal["demo", "user"] = "demo"):
         date = today - timedelta(days=offset)
         days.append({"date": date.isoformat(), "count": sum(datetime.fromisoformat(r["created_at"]).astimezone(LOCAL_TZ).date() == date for r in items)})
     dates = [datetime.fromisoformat(r["created_at"]).astimezone(LOCAL_TZ).date() for r in items]
-    coverage = (today - min(dates)).days + 1 if dates else 0
+    # A partial current day must not replace a completed day in the baseline.
+    completed_dates = [d for d in dates if d < today]
+    coverage = (today - min(completed_dates)).days if completed_dates else 0
     forecasts = []
     roots = [r for r in items if r["id"] == r["problem_id"]]
     sectors = []
@@ -582,14 +584,14 @@ def analytics(dataset: Literal["demo", "user"] = "demo"):
                         "recurrences": sum(r["recurrence_of"] is not None for r in problems),
                         "open": sum(r["status"] != "resolved" for r in problems)})
     sector_forecasts = []
-    if coverage >= 28 and len(items) >= 30:
+    if coverage >= 28 and len(completed_dates) >= 30:
         for key, label in CATEGORIES.items():
-            count = sum(r["category"] == key and today - timedelta(days=27) <= datetime.fromisoformat(r["created_at"]).astimezone(LOCAL_TZ).date() <= today for r in items)
+            count = sum(r["category"] == key and today - timedelta(days=28) <= datetime.fromisoformat(r["created_at"]).astimezone(LOCAL_TZ).date() < today for r in items)
             forecasts.append({"category": key, "label": label, "expected": round(count / 4, 1)})
         for zone in sorted({r["zone"] for r in items}):
-            count = sum(r["zone"] == zone and today - timedelta(days=27) <= datetime.fromisoformat(r["created_at"]).astimezone(LOCAL_TZ).date() <= today for r in items)
+            count = sum(r["zone"] == zone and today - timedelta(days=28) <= datetime.fromisoformat(r["created_at"]).astimezone(LOCAL_TZ).date() < today for r in items)
             sector_forecasts.append({"zone": zone, "expected": round(count / 4, 1)})
-    evaluation = evaluate_baseline(dates, today, coverage)
+    evaluation = evaluate_baseline(completed_dates, today, coverage)
     accuracy_note = ("Ошибка на прошлых данных показана ниже. Точность на будущих обращениях пока не проверена."
                      if evaluation["available"] else "Для проверки точности пока недостаточно истории.")
     return {"days": days, "coverage_days": coverage, "forecasts": forecasts,
@@ -599,7 +601,7 @@ def analytics(dataset: Literal["demo", "user"] = "demo"):
             "recurrences": sum(r["recurrence_of"] is not None for r in roots), "sectors": sectors,
             "sector_forecasts": sector_forecasts, "evaluation": evaluation,
             "forecast_method": "Среднее число обращений за четыре недели",
-            "forecast_note": "Расчёт требует полной истории за 28 дней и не оценивает вероятность аварии. " + accuracy_note,
+            "forecast_note": "Расчёт использует 28 завершённых дней и не оценивает вероятность аварии. " + accuracy_note,
             "categories": [{"category": key, "label": label, "count": sum(r["category"] == key for r in items)} for key, label in CATEGORIES.items()]}
 
 

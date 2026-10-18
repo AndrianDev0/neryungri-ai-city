@@ -8,14 +8,14 @@
   <meta name="theme-color" content="#f5f5f7">
   <link rel="icon" type="image/svg+xml" href="static/logo.svg">
   <script src="static/config.js"></script>
-  <script src="static/connection.js?v=20261018-copy"></script>
+  <script src="static/connection.js?v=20261018-check"></script>
   <script src="static/appearance.js?v=20261018-theme-label"></script>
   <link rel="stylesheet" href="static/design.css?v=20261018-copy">
   <script src="static/report-scroll.js" defer></script>
   <script src="static/maps.js?v=20261018-copy" defer></script>
-  <script src="static/problems.js?v=20261018-copy" defer></script>
-  <script src="static/workflow.js?v=20261018-copy" defer></script>
-  <script src="static/app.js?v=20261018-copy" defer></script>
+  <script src="static/problems.js?v=20261018-check" defer></script>
+  <script src="static/workflow.js?v=20261018-check" defer></script>
+  <script src="static/app.js?v=20261018-check" defer></script>
 </head>
 <body>
 <a class="skip-link" href="#main">Перейти к обращениям</a>
@@ -109,7 +109,7 @@
     <h3>Что означает точка</h3><p>Выберите место на карте или загрузите координаты из файла. Приложение пока не определяет точку по адресу. Секторы на карточках условные и не обозначают официальные районы.</p>
     <h3>Обращения и проблемы</h3><p>Одна карточка содержит одно обращение. Несколько обращений об одной неисправности можно объединить в проблему. Дубль сообщает о той же нерешённой проблеме. Повтор после ремонта связывается с ранее подтверждённым ремонтом.</p>
     <h3>Учебные обращения</h3><p>Все обращения и точки в учебном наборе вымышлены. Они показывают работу приложения и не описывают состояние города. В сводке и аналитике учитываются только обращения выбранного набора.</p>
-    <h3>Прогноз</h3><p>Приложение оценивает число обращений на следующую неделю по среднему за последние четыре недели. Для расчёта нужна полная история за 28 дней и не менее 30 обращений. Это прогноз числа обращений, а не вероятности аварии или повторной поломки.</p>
+    <h3>Прогноз</h3><p>Приложение оценивает число обращений на следующую неделю по среднему за 28 завершённых дней. Сегодняшний день в расчёт не входит. Нужна полная история и не менее 30 обращений до сегодняшнего дня. Это прогноз числа обращений, а не вероятности аварии или повторной поломки.</p>
   </div>
 </dialog>
 <dialog id="map-help-dialog" class="form-dialog compact-dialog" aria-labelledby="map-help-title"><div class="dialog-top"><h2 id="map-help-title">Подключить Яндекс Карты</h2><button class="icon-button" data-close="map-help-dialog" aria-label="Закрыть инструкцию"><span data-icon="close"></span></button></div><ol class="map-setup-steps"><li>В <a href="https://developer.tech.yandex.ru/" target="_blank" rel="noopener">кабинете разработчика Яндекса</a> нажмите «Подключить API» и выберите <strong>JavaScript API</strong>.</li><li>Для ключа заполните ограничение по HTTP Referer: <code>localhost</code>, без порта. Открывайте приложение по адресу <code>http://localhost:8765</code>.</li><li>Откройте файл <code>config.local.toml</code> в папке проекта и вставьте ключ между кавычками:<pre>yandex_maps_api_key = "ваш ключ"</pre></li><li>Сохраните файл и обновите страницу. Активация ключа и ограничений может занять до 15 минут.</li></ol><p class="field-help">Бесплатный доступ зависит от условий Яндекса. <a href="https://yandex.ru/dev/commercial/doc/ru/" target="_blank" rel="noopener">Условия использования</a></p><div class="dialog-actions"><button class="button primary" type="button" data-close="map-help-dialog">Понятно</button></div></dialog>

@@ -18,16 +18,19 @@ window.cityFetch = async (path, options = {}) => {
   if (typeof options.body === 'string' && !headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json');
   }
-  let token = editing ? sessionStorage.getItem('city-write-token') : null;
+  let token = null;
+  try { if (editing) token = sessionStorage.getItem('city-write-token'); } catch { /* The owner can still enter the code for this request. */ }
   if (token) headers.set('Authorization', `Bearer ${token}`);
   let response = await fetch(cityApiUrl(path), {...options, headers});
   if (response.status === 401 && editing) {
-    sessionStorage.removeItem('city-write-token');
+    try { sessionStorage.removeItem('city-write-token'); } catch { /* Storage is optional. */ }
     token = window.prompt('Для изменения данных введите код владельца. Просматривать обращения можно без кода.');
     if (token?.trim()) {
       headers.set('Authorization', `Bearer ${token.trim()}`);
       response = await fetch(cityApiUrl(path), {...options, headers});
-      if (response.ok) sessionStorage.setItem('city-write-token', token.trim());
+      if (response.ok) {
+        try { sessionStorage.setItem('city-write-token', token.trim()); } catch { /* The write succeeded without saving the code. */ }
+      }
     }
   }
   return response;

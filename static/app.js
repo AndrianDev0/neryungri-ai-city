@@ -20,6 +20,7 @@ const icon = name => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
 $$('[data-icon]').forEach(el => {el.innerHTML = icon(el.dataset.icon);});
 const state = {dataset:'demo', view:'map', reports:[], meta:null, selected:null, markers:new Map(), loading:true, failed:false, sort:'priority', request:0, analyticsRequest:0};
 let cityMap, pickMap, pickMarker, toastTimer, detailReturnTarget, mapLoading=false;
+let analysisRevision=0;
 const center = [124.715, 56.662];
 const titles = {map:'Карта обращений', registry:'Реестр обращений', analytics:'Аналитика обращений'};
 
@@ -125,7 +126,13 @@ function renderReports() {
 }
 async function loadReports() {
   const request=++state.request;
-  state.loading=true; state.failed=false; $('#global-error').hidden=true; renderReports();
+  state.analyticsRequest++;
+  state.loading=true; state.failed=false; state.reports=[];
+  $('#global-error').hidden=true;
+  ['#stat-total','#stat-high','#stat-progress','#stat-unlocated'].forEach(s=>$(s).textContent='…');
+  $('#problem-summary').textContent='Загружаем сведения о связях…';
+  clearMarkers();renderReports();
+  if(state.view==='analytics')$('#analytics-content').innerHTML='<div class="loading-state">Загружаем аналитику…</div>';
   try {
     const data=await api(`/api/reports?dataset=${state.dataset}`);
     if(request!==state.request)return;
@@ -138,6 +145,7 @@ async function loadReports() {
     $('#global-error-text').textContent=error.message; $('#global-error').hidden=false;
     ['#stat-total','#stat-high','#stat-progress','#stat-unlocated'].forEach(s=>$(s).textContent='…');
     clearMarkers();renderReports();
+    if(state.view==='analytics')$('#analytics-content').innerHTML='<div class="empty-state"><h3>Не удалось загрузить данные</h3><p>Нажмите «Повторить» над сводкой.</p></div>';
   }
 }
 function switchDataset(dataset) {
@@ -182,6 +190,30 @@ function restoreDetailFocus() {
   (target || $(`[data-view="${state.view}"]`))?.focus({preventScroll:true});
 }
 
+async function saveDetail(event,id) {
+  event.preventDefault();
+  const form=event.currentTarget,button=$('#detail-save');
+  const controls=[...form.querySelectorAll('input,select,textarea,button'),$('#discard-draft')];
+  const disabled=controls.map(control=>control.disabled);
+  busy(button,true,'Сохраняем…');setError('#detail-error','');
+  try {
+    rememberDetail();const changes=detailDrafts.get(id);
+    if(!changes){showToast('Нет изменений для сохранения');return;}
+    controls.forEach(control=>{control.disabled=true;});
+    await api(`/api/reports/${id}`,{method:'PATCH',body:JSON.stringify(changes)});
+    if(JSON.stringify(detailDrafts.get(id))===JSON.stringify(changes))detailDrafts.delete(id);
+    await loadReports();
+    if($('#detail-form')===form)$('#report-dialog').close();
+    showToast('Изменения сохранены');
+  } catch(error) {
+    if($('#detail-form')===form){setError('#detail-error',error.message);$('#detail-error').focus();}
+    else showToast(error.message);
+  } finally {
+    controls.forEach((control,index)=>{if(control.isConnected)control.disabled=disabled[index];});
+    busy(button,false);
+  }
+}
+
 async function openDetail(id, opener = document.activeElement, discard = false) {
   if($('#report-dialog').open&&!discard)rememberDetail();
   const r=state.reports.find(x=>x.id===id);if(!r)return;
@@ -196,11 +228,7 @@ async function openDetail(id, opener = document.activeElement, discard = false) 
   renderProblemDetails(r);
   setupWorkflow(r);
   if(!$('#report-dialog').open)$('#report-dialog').showModal();
-  $('#detail-form').addEventListener('submit',async event=>{
-    event.preventDefault(); const button=$('#detail-save');busy(button,true,'Сохраняем…');setError('#detail-error','');
-    try {rememberDetail();const changes=detailDrafts.get(id);if(!changes){showToast('Нет изменений для сохранения');return;}await api(`/api/reports/${id}`,{method:'PATCH',body:JSON.stringify(changes)});detailDrafts.delete(id);await loadReports();$('#report-dialog').close();showToast('Изменения сохранены');}
-    catch(error){setError('#detail-error',error.message);$('#detail-error').focus();}finally{busy(button,false);}
-  });
+  $('#detail-form').addEventListener('submit',event=>saveDetail(event,id));
   try {
     const data=await api(`/api/similar/${id}`);
     if(state.selected!==id)return;
@@ -209,6 +237,7 @@ async function openDetail(id, opener = document.activeElement, discard = false) 
 }
 
 async function openNew() {
+  analysisRevision++;
   $('#new-form').reset();$('#save-report').textContent='Сохранить обращение';$('#analysis-result').innerHTML='';$('#analysis-result').hidden=true;setError('#new-error','');$('#new-dialog').showModal();
   clearPickMarker();
   try {
@@ -239,14 +268,16 @@ function setLocation(lat,lon) {
 }
 async function analyzeText() {
   const text=$('#new-text');if(!text.reportValidity())return;
+  const revision=++analysisRevision,submittedText=text.value,category=$('#new-category').value;
   const button=$('#analyze-button');busy(button,true,'Определяем категорию…');setError('#new-error','');
   try {
-    const result=await api('/api/analyze',{method:'POST',body:JSON.stringify({text:text.value})});
+    const result=await api('/api/analyze',{method:'POST',body:JSON.stringify({text:submittedText})});
+    if(revision!==analysisRevision||!$('#new-dialog').open||text.value!==submittedText||$('#new-category').value!==category)return;
     $('#new-category').value=result.category;
     $('#analysis-result').innerHTML=`<strong>${escapeHtml(result.suggestions?.length?result.suggestions.map(s=>s.label).join(' + '):result.category_label)} · ${escapeHtml(state.meta.priorities[result.priority])} приоритет</strong><p>${escapeHtml(result.reasons.join(' '))}</p><p>${result.suggestions?.length?'Найдено несколько тем. Можно разделить сообщение на обращения или выбрать одну категорию.':result.review_required?'Не удалось уверенно определить категорию. Выберите её из списка.':'Проверьте предложенную категорию.'}</p>`;
     $('#analysis-result').hidden=false;
     splitSuggestions(result);
-  }catch(error){setError('#new-error',error.message);}finally{busy(button,false);}
+  }catch(error){if(revision===analysisRevision&&$('#new-dialog').open)setError('#new-error',error.message);}finally{busy(button,false);}
 }
 async function saveNew(event) {
   event.preventDefault();setError('#new-error','');
@@ -273,6 +304,8 @@ async function importCsv(event) {
   }catch(error){setError('#import-error',error.message);}finally{busy(button,false);}
 }
 async function loadAnalytics() {
+  if(state.loading){$('#analytics-content').innerHTML='<div class="loading-state">Загружаем аналитику…</div>';return;}
+  if(state.failed){$('#analytics-content').innerHTML='<div class="empty-state"><h3>Не удалось загрузить данные</h3><p>Нажмите «Повторить» над сводкой.</p></div>';return;}
   const request=++state.analyticsRequest;$('#analytics-content').innerHTML='<div class="loading-state">Загружаем аналитику…</div>';
   try {
     const data=await api(`/api/analytics?dataset=${state.dataset}`);if(request!==state.analyticsRequest)return;
@@ -312,7 +345,8 @@ $('#zoom-lock').addEventListener('click',()=>{
 $('#new-open').addEventListener('click',openNew);$('#import-open').addEventListener('click',openImport);
 $('#method-open').addEventListener('click',()=>$('#method-dialog').showModal());
 $('#analyze-button').addEventListener('click',analyzeText);$('#new-form').addEventListener('submit',saveNew);
-$('#new-text').addEventListener('input',()=>{$('#save-report').textContent='Сохранить обращение';$('#analysis-result').innerHTML='';$('#analysis-result').hidden=true;$('#new-category').value='';});
+$('#new-text').addEventListener('input',()=>{analysisRevision++;$('#save-report').textContent='Сохранить обращение';$('#analysis-result').innerHTML='';$('#analysis-result').hidden=true;$('#new-category').value='';});
+$('#new-dialog').addEventListener('close',()=>{analysisRevision++;});
 $('#clear-location').addEventListener('click',()=>{$('#new-lat').value='';$('#new-lon').value='';clearPickMarker();});
 ['#new-lat','#new-lon'].forEach(s=>$(s).addEventListener('change',()=>{const lat=Number($('#new-lat').value),lon=Number($('#new-lon').value);if(lat>=56.5&&lat<=56.8&&lon>=124.45&&lon<=124.95){setLocation(lat,lon);pickMap?.setLocation({center:[lon,lat]});}else clearPickMarker();}));
 $('#csv-file').addEventListener('change',()=>{$('#file-name').textContent=$('#csv-file').files[0]?.name||'CSV в UTF-8, до 2 МБ и 500 обращений';});
