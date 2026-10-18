@@ -63,3 +63,13 @@ def test_pages_build_contains_only_client_files(tmp_path):
     assert not list(tmp_path.rglob("*.docx"))
     with pytest.raises(ValueError):
         build("http://localhost:8765", tmp_path / "invalid")
+
+
+def test_pages_versions_scripts_to_replace_cached_clients(tmp_path):
+    build("https://city.example", tmp_path)
+    before = (tmp_path / "index.html").read_text(encoding="utf-8")
+    assert re.search(r'src="static/connection.js\?v=[0-9a-f]{12}"', before)
+    old_config = re.search(r'src="static/config.js\?v=([0-9a-f]+)"', before)[1]
+    build("https://second.example", tmp_path)
+    after = (tmp_path / "index.html").read_text(encoding="utf-8")
+    assert re.search(r'src="static/config.js\?v=([0-9a-f]+)"', after)[1] != old_config
