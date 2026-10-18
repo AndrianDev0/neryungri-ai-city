@@ -1,0 +1,3 @@
+# Copy this file to config.local.toml and insert your JavaScript API key.
+# Restrict the key to localhost in the Yandex developer console.
+yandex_maps_api_key = ""

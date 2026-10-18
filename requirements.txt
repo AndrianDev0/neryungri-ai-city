@@ -1,0 +1,6 @@
+fastapi==0.142.4
+uvicorn==0.54.0
+scikit-learn>=1.6,<2
+httpx>=0.28,<1
+pytest>=8,<10
+Pillow>=11,<13

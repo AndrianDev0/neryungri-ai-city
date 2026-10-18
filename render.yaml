@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: neryungri-ai-city-api
+    runtime: docker
+    plan: free
+    healthCheckPath: /api/health
+    envVars:
+      - key: NERYUNGRI_PUBLIC
+        value: "1"
+      - key: NERYUNGRI_ALLOWED_ORIGINS
+        value: https://andriandev0.github.io
+      - key: NERYUNGRI_WRITE_TOKEN
+        generateValue: true
+      - key: NERYUNGRI_YANDEX_MAPS_API_KEY
+        sync: false

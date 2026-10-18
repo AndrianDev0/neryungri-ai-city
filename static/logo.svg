@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <title>Neryungri AI City</title>
+  <path fill="#202124" d="M22 2h20c14 0 20 6 20 20v20c0 14-6 20-20 20H22C8 62 2 56 2 42V22C2 8 8 2 22 2Z"/>
+  <path d="M18 45V19l28 26V19" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="46" cy="19" r="4.5" fill="#86BDFF" stroke="#202124" stroke-width="2"/>
+</svg>
