@@ -26,7 +26,11 @@ const titles = {map:'Карта обращений', registry:'Реестр об
 async function api(path, options = {}) {
   let response;
   try { response = await cityFetch(path, options); }
-  catch { throw new Error('Не удалось связаться с приложением. Проверьте, что оно запущено, и повторите.'); }
+  catch {
+    const error = new Error('Не удалось связаться с приложением. Проверьте, что оно запущено, и повторите.');
+    error.networkFailure = true;
+    throw error;
+  }
   if (!response.ok) {
     let message = 'Не удалось выполнить действие. Повторите ещё раз.';
     try {
@@ -311,7 +315,10 @@ async function initialize() {
     if(!state.meta){state.meta=await api('/api/meta');$('#category-filter').innerHTML='<option value="">Все категории</option>'+categoryOptions();$('#new-category').innerHTML=categoryOptions('',true);}
     if(state.meta.temporary_storage){$('#hosting-notice').hidden=false;$('#storage-note').textContent='Временное хранение на сервере';}
     if(!cityMap)initMap();await loadReports();
-  }catch(error){$('#global-error-text').textContent=error.message;$('#global-error').hidden=false;state.loading=false;state.failed=true;renderReports();}
+  }catch(error){
+    if(!state.meta && error.networkFailure && cityOpenHostedApp())return;
+    $('#global-error-text').textContent=error.message;$('#global-error').hidden=false;state.loading=false;state.failed=true;renderReports();
+  }
 }
 $$('a[href^="/api/"]').forEach(link => {link.href=cityApiUrl(link.getAttribute('href'));});
 initialize();

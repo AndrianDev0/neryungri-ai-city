@@ -2,6 +2,15 @@
 
 window.cityApiUrl = path => `${(window.CITY_CONFIG?.apiBase || '').replace(/\/$/, '')}${path}`;
 
+window.cityOpenHostedApp = () => {
+  const base = window.CITY_CONFIG?.apiBase;
+  if (!base) return false;
+  const destination = new URL(base);
+  if (destination.protocol !== 'https:' || destination.origin === window.location.origin) return false;
+  window.location.replace(destination.origin + '/');
+  return true;
+};
+
 window.cityFetch = async (path, options = {}) => {
   const headers = new Headers(options.headers || {});
   const method = (options.method || 'GET').toUpperCase();
