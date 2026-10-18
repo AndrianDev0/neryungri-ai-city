@@ -12,9 +12,9 @@
       const dark=document.documentElement.dataset.theme==='dark';
       document.querySelector('meta[name="theme-color"]').content=dark?'#19191b':'#f5f5f7';
       button.setAttribute('aria-pressed',String(dark));
-      button.setAttribute('aria-label',dark?'Включить светлую тему':'Включить тёмную тему');
+      button.setAttribute('aria-label',dark?'Сменить тему на светлую':'Сменить тему на тёмную');
       button.title=button.getAttribute('aria-label');
-      button.querySelector('.theme-caption').textContent=dark?'Тёмная тема':'Светлая тема';
+      button.querySelector('.theme-caption').textContent='Сменить тему';
     };
     button.addEventListener('click',()=>{
       const theme=document.documentElement.dataset.theme==='dark'?'light':'dark';
